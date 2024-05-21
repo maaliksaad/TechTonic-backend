@@ -10,6 +10,7 @@ import { Model } from 'mongoose'
 import { Blog, type BlogDocument } from '@/models'
 import { AuthService } from '@/modules/auth/auth.service'
 import { type CreateBlogDto, type UpdateBlogDto } from '@/modules/blogs/dtos'
+import path from 'path'
 
 @Injectable()
 export class BlogsService {
@@ -24,7 +25,10 @@ export class BlogsService {
   }
 
   async getAllBlogs() {
-    return await this.blogModel.find().exec()
+    return await this.blogModel
+      .find()
+      .populate({ path: 'user', select: '-password' })
+      .exec()
   }
 
   async getUserCateredAllBlogById(id: string, user_id: string) {
@@ -46,7 +50,10 @@ export class BlogsService {
   }
 
   async getPublicBlogById(id: string) {
-    const blog = await this.blogModel.findById(id).exec()
+    const blog = await this.blogModel
+      .findById(id)
+      .populate({ path: 'user', select: '-password' })
+      .exec()
 
     if (blog == null) {
       throw new NotFoundException({

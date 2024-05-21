@@ -20,7 +20,7 @@ async function bootstrap() {
 bootstrap()
   .then(() => {
     console.log(
-      `Application is running on: http://localhost:${process.env.PORT ?? 3000}`
+      `Application is running on: http://localhost:${process.env.PORT ?? 8000}`
     )
   })
   .catch(error => {
