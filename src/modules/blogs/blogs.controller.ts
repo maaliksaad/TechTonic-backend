@@ -4,9 +4,11 @@ import {
   Controller,
   Delete,
   Get,
+  NotAcceptableException,
   Param,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
@@ -16,6 +18,8 @@ import { TokenGuard } from '@/guards/token.guard'
 import { UserDocument } from '@/models'
 import { BlogsService } from '@/modules/blogs/blogs.service'
 import { BlogIdDto, CreateBlogDto, UpdateBlogDto } from '@/modules/blogs/dtos'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { diskStorage } from 'multer'
 
 @Controller('blogs')
 export class BlogsController {
@@ -35,7 +39,7 @@ export class BlogsController {
 
   @UseGuards(TokenGuard)
   @UseInterceptors(CacheInterceptor)
-  @Get()
+  @Get('user/:id')
   async getBlogs(@GetUser() user: UserDocument) {
     return await this.blogService.getUserCateredAllBlogs(user._id.toString())
   }
@@ -52,14 +56,38 @@ export class BlogsController {
 
   @UseGuards(TokenGuard)
   @Post()
-  async createBlog(@Body() body: CreateBlogDto, @GetUser() user: UserDocument) {
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          cb(null, `${file.originalname}`)
+        }
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+          return cb(new NotAcceptableException('Invalid file type'), false)
+        }
+        cb(null, true)
+      }
+    })
+  )
+  async createBlog(
+    @Body() body: CreateBlogDto,
+    @UploadedFile() file: Express.Multer.File,
+    @GetUser() user: UserDocument
+  ) {
+    if (!file) {
+      throw new NotAcceptableException('No file uploaded')
+    }
+
     const blog = await this.blogService.create({
       title: body.title,
       content: body.content,
       user_id: user._id.toString(),
       category: body.category,
       slug: body.slug,
-      image: body.image
+      image: file.filename
     })
 
     return await this.blogService.getUserCateredAllBlogById(

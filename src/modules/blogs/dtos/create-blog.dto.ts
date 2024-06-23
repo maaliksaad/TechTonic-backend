@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer'
-import { IsNotEmpty, IsString, Length } from 'class-validator'
+import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator'
 
 export class CreateBlogDto {
   @IsNotEmpty()
@@ -26,7 +26,6 @@ export class CreateBlogDto {
   @Transform(({ value }) => value.trim())
   slug: string
 
-  @IsNotEmpty()
-  @IsString()
+  @IsOptional()
   image: string
 }

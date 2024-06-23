@@ -10,7 +10,6 @@ import { Model } from 'mongoose'
 import { Blog, type BlogDocument } from '@/models'
 import { AuthService } from '@/modules/auth/auth.service'
 import { type CreateBlogDto, type UpdateBlogDto } from '@/modules/blogs/dtos'
-import path from 'path'
 
 @Injectable()
 export class BlogsService {
