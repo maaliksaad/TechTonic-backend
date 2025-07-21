@@ -33,7 +33,10 @@ export class AuthService {
   }
 
   async generateToken(user: UserDocument) {
-    return this.jwtService.sign({ id: user._id }, { expiresIn: '1d' })
+    return this.jwtService.sign(
+      { id: user._id }, // Use 'id' to match your strategy
+      { expiresIn: '1d' }
+    )
   }
 
   async deleteUser(user_id: string) {

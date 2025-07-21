@@ -21,12 +21,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    console.log('JWT payload:', payload)
     const user = await this.userModel.findById(payload.id)
-
-    if (user == null) {
+    if (!user) {
+      console.log('User not found for id:', payload.id)
       return null
     }
-
     return user.toObject()
   }
 }

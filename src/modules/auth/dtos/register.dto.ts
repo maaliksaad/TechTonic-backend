@@ -13,7 +13,7 @@ export class RegisterDto {
 
   @IsNotEmpty()
   @Transform(({ value }) => value.trim())
-  @Length(5, 10)
+  @Length(3, 20)
   name: string
 
   @IsOptional()

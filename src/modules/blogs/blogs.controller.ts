@@ -1,4 +1,3 @@
-import { CacheInterceptor } from '@nestjs/cache-manager'
 import {
   Body,
   Controller,
@@ -7,19 +6,22 @@ import {
   NotAcceptableException,
   Param,
   Patch,
-  Post,
+  Post, // ✅ FIXED: Ensures POST route for create
+  Req,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
+import { CacheInterceptor } from '@nestjs/cache-manager'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { diskStorage } from 'multer'
 
 import { GetUser } from '@/decorators'
 import { TokenGuard } from '@/guards/token.guard'
 import { UserDocument } from '@/models'
 import { BlogsService } from '@/modules/blogs/blogs.service'
 import { BlogIdDto, CreateBlogDto, UpdateBlogDto } from '@/modules/blogs/dtos'
-import { FileInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
 
 @Controller('blogs')
 export class BlogsController {
@@ -31,29 +33,6 @@ export class BlogsController {
     return await this.blogService.getAllBlogs()
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @Get(':id')
-  async getPublicBlog(@Param() { id }: BlogIdDto) {
-    return await this.blogService.getPublicBlogById(id)
-  }
-
-  @UseGuards(TokenGuard)
-  @UseInterceptors(CacheInterceptor)
-  @Get('user/:id')
-  async getBlogs(@GetUser() user: UserDocument) {
-    return await this.blogService.getUserCateredAllBlogs(user._id.toString())
-  }
-
-  @UseGuards(TokenGuard)
-  @UseInterceptors(CacheInterceptor)
-  @Get(':id')
-  async getBlog(@Param() { id }: BlogIdDto, @GetUser() user: UserDocument) {
-    return await this.blogService.getUserCateredAllBlogById(
-      id,
-      user._id.toString()
-    )
-  }
-
   @UseGuards(TokenGuard)
   @Post()
   @UseInterceptors(
@@ -61,7 +40,7 @@ export class BlogsController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
-          cb(null, `${file.originalname}`)
+          cb(null, `${Date.now()}-${file.originalname}`)
         }
       }),
       fileFilter: (req, file, cb) => {
@@ -92,6 +71,36 @@ export class BlogsController {
 
     return await this.blogService.getUserCateredAllBlogById(
       blog._id.toString(),
+      user._id.toString()
+    )
+  }
+
+  @UseGuards(TokenGuard)
+  @Get('user')
+  async getCurrentUserBlogs(@GetUser() user: UserDocument, @Req() req) {
+    console.log('Headers:', req.headers)
+    console.log('User in controller:', user)
+
+    if (!user) {
+      throw new UnauthorizedException('User not found in request')
+    }
+
+    return await this.blogService.getUserCateredAllBlogs(user._id.toString())
+  }
+
+  @UseInterceptors(CacheInterceptor)
+  @Get(':id')
+  async getPublicBlog(@Param() { id }: BlogIdDto) {
+    return await this.blogService.getPublicBlogById(id)
+  }
+
+  // ✅ FIXED: Changed from @Get(':id') to @Get('auth/:id') to avoid duplicate route
+  @UseGuards(TokenGuard)
+  @UseInterceptors(CacheInterceptor)
+  @Get('auth/:id')
+  async getBlog(@Param() { id }: BlogIdDto, @GetUser() user: UserDocument) {
+    return await this.blogService.getUserCateredAllBlogById(
+      id,
       user._id.toString()
     )
   }
